@@ -1,7 +1,7 @@
 # Yet Another Api Generator
-- [What is That?](#what-is-that?)
-- [How using it?](#how-using-it?)
-- [How to extend Api?](#how-to-extend-api?)
+- [What is That?](#what-is-that)
+- [How using it?](#how-using-it)
+- [How to extend Api?](#how-to-extend-api)
 
 ## What is that?
 This is a simple parsing tool wich automaticly parse somme file and if keywords are found, will generate the array for the rest api
