@@ -2,3 +2,7 @@
 # https://help.github.com/articles/ignoring-files
 # Example .gitignore files: https://github.com/github/gitignore
 /cache/
+/apitest.php
+/basetest.php
+/index.php
+/LICENSE
