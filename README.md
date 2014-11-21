@@ -4,8 +4,7 @@
 - [How to extend Api?](#how-to-extend-api)
 
 ## What is that?
-This is a simple parsing tool wich automaticly parse somme file and if keywords are found, will generate the array for the rest api
-The api can handle with the authenticate required function and with group privilege
+
 ## How using it?
 ### HTTP server: 
 Activate the `url rewriting` and only call index.php.    

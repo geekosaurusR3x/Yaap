@@ -20,30 +20,62 @@ class ApiGenerator
 	/**
 	 * Return the name of the cache file for a class and function
 	 */
-	private function getNameFileCache($class="",$function="")
+	private function getNameFileCache($class,$function,$param)
 	{
-		return $this->cache_dir."/".$class."/".$function.".cache";
+		$param = md5(json_encode($param));
+		return $this->getDirFileCache($class,$function).DIRECTORY_SEPARATOR.$param.".cache";
+	}
+
+	/**
+	 * Return the name of the cache directory for a class and function
+	 */
+	private function getDirFileCache($class,$function)
+	{
+		return $this->cache_dir.DIRECTORY_SEPARATOR.$class.DIRECTORY_SEPARATOR.$function;
 	}
 
 	/**
 	 * Generate cache file
 	 */
-	private function genFileCache($class="",$function="",$content)
+	private function genFileCache($class="",$function="",$param="main",$content)
 	{
-		if(!is_dir($this->cache_dir."/".$class))
+		if(!is_dir($this->cache_dir))
 		{
-			mkdir($this->cache_dir."/".$class);
+			mkdir($this->cache_dir);
 		}
-		file_put_contents($this->getNameFileCache($class,$function), '<?php return '.var_export( $content, true ).";\n" );
+		if(!is_dir($this->cache_dir.DIRECTORY_SEPARATOR.$class))
+		{
+			mkdir($this->cache_dir.DIRECTORY_SEPARATOR.$class);
+		}
+		if(!is_dir($this->getDirFileCache($class,$function)))
+		{
+			mkdir($this->getDirFileCache($class,$function));
+		}
+		file_put_contents($this->getNameFileCache($class,$function,$param), serialize($content));
+	}
+
+	/**
+	 * Read File cache and return content
+	 */
+	private function getFileCache($class="",$function="",$param="main"){
+		return unserialize(file_get_contents($this->getNameFileCache($class,$function,$param)));
 	}
 
 	/**
 	 * Delete cache file
 	 */
-	private function delFileCache($class="",$function=""){
-		$file_name = $this->getNameFileCache($class,$function);
-		if(file_exists($file_name)){
-			unlink($file_name);
+	private function delFileCache($class="",$function="",$param="main"){
+		if($param == "main"){
+			if(file_exists($this->getDirFileCache($class,$function)))
+			{
+				foreach (scandir($this->getDirFileCache($class,$function)) as $item) {
+					if ($item == '.' || $item == '..') continue;
+					unlink($this->getDirFileCache($class,$function).DIRECTORY_SEPARATOR.$item);
+				}
+				rmdir($this->getDirFileCache($class,$function));
+			}
+		}else{
+			unlink($this->getNameFileCache($class,$function,$param));
 		}
 	}
 
@@ -54,13 +86,14 @@ class ApiGenerator
 	{
 		$this->using_cache = $bool;
 	}
+
 	/**
 	 * List file and include only one that start by "api" like apimodulelog.php
 	 * Do an eval of the source of this file
 	 * Generate the api map
 	 */
 	public function load(){
-		$file_cache_exists = file_exists($this->getNameFileCache("api","map"));
+		$file_cache_exists = file_exists($this->getNameFileCache("api","map","main"));
 
 		$dir = opendir("./");
 		$class;
@@ -84,12 +117,12 @@ class ApiGenerator
 		closedir($dir);
 		if($this->using_cache && !$file_cache_exists)
 		{
-			$this->genFileCache("api","map", $this->apiMap);
+			$this->genFileCache("api","map", "main",$this->apiMap);
 		}
 
 		if($this->using_cache && $file_cache_exists)
 		{
-			$this->apiMap = include($this->getNameFileCache("api","map"));
+			$this->apiMap = $this->getFileCache("api","map");
 		}
 	}
 
@@ -279,7 +312,8 @@ class ApiGenerator
 			if($auth == $function['auth'] && !$function["disable"]){
 				if($execute)
 				{
-					$file_cache_exists = file_exists($this->getNameFileCache($route["classname"]));
+					$param_cache = (isset($elementsUrl[0]))?$elementsUrl[0]:"main";
+					$file_cache_exists = file_exists($this->getNameFileCache($route["classname"],$function["functionname"],$param_cache));
 
 					if(!$default){
 						array_splice($elementsUrl,0,1);
@@ -292,18 +326,23 @@ class ApiGenerator
 
 					if($this->using_cache && $function['cache']['activate'] && !$file_cache_exists)
 					{
-						$this->genFileCache($route["classname"], $function["functionname"], $return);
+						$this->genFileCache($route["classname"], $function["functionname"],$param_cache, $return);
 					}
 
 					if($this->using_cache && $file_cache_exists && $function['cache']['activate'])
 					{
-						$return  = include($this->getNameFileCache($route["classname"], $function["functionname"]));
+						$return  = $this->getFileCache($route["classname"], $function["functionname"],$param_cache);
 					}
 
 					foreach($function['cache']['del'] as $delement){
-						$this->delFileCache($delement["classname"], $delement["functionname"]);
-					}
+						if(isset($return['param'])){
+							$this->delFileCache($delement["classname"], $delement["functionname"],$return['param']);
+						}else{
+							$this->delFileCache($delement["classname"], $delement["functionname"]);
+						}
 
+					}
+					unset($return['param']);
 				}
 			}
 			else{
