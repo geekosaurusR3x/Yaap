@@ -6,17 +6,31 @@
 class ApiGenerator
 {
 	private $apiMap;
-	private $using_cache;
-	private $cache_dir;
+	private $config;
+	private $config_file = "config/api_config.json";
 
 	/**
 	 * Simple constructor wich only initalise var
 	 */
-	function __construct() {
+	function __construct($config_file) {
 		$this->apiMap = [];
-		$this->cache_dir = "cache";
+		$this->config_file = $config_file;
+
+		$this->config->using_cache = false;
+		$this->config->cache_dir = "cache";
+
 	}
 
+	/**
+	 * Load the config file if exist
+	 * try into config dir or at the root
+	 */
+	private function loadConfig(){
+		if(file_exists($this->config_file)){
+			$this->config = json_decode(file_get_contents($this->config_file),true);
+		}
+
+	}
 	/**
 	 * Return the name of the cache file for a class and function
 	 */
@@ -31,7 +45,7 @@ class ApiGenerator
 	 */
 	private function getDirFileCache($class,$function)
 	{
-		return $this->cache_dir.DIRECTORY_SEPARATOR.$class.DIRECTORY_SEPARATOR.$function;
+		return $this->config->cache_dir.DIRECTORY_SEPARATOR.$class.DIRECTORY_SEPARATOR.$function;
 	}
 
 	/**
@@ -39,13 +53,13 @@ class ApiGenerator
 	 */
 	private function genFileCache($class="",$function="",$param="main",$content)
 	{
-		if(!is_dir($this->cache_dir))
+		if(!is_dir($this->config->cache_dir))
 		{
-			mkdir($this->cache_dir);
+			mkdir($this->config->cache_dir);
 		}
-		if(!is_dir($this->cache_dir.DIRECTORY_SEPARATOR.$class))
+		if(!is_dir($this->config->cache_dir.DIRECTORY_SEPARATOR.$class))
 		{
-			mkdir($this->cache_dir.DIRECTORY_SEPARATOR.$class);
+			mkdir($this->config->cache_dir.DIRECTORY_SEPARATOR.$class);
 		}
 		if(!is_dir($this->getDirFileCache($class,$function)))
 		{
@@ -84,7 +98,7 @@ class ApiGenerator
 	 */
 	public function setCache($bool)
 	{
-		$this->using_cache = $bool;
+		$this->config->using_cache = $bool;
 	}
 
 	/**
@@ -93,6 +107,7 @@ class ApiGenerator
 	 * Generate the api map
 	 */
 	public function load(){
+
 		$file_cache_exists = file_exists($this->getNameFileCache("api","map","main"));
 
 		$dir = opendir("./");
@@ -103,7 +118,7 @@ class ApiGenerator
 			if(substr_compare($file,"api", 0,3) == 0 && substr_compare($file,"apimanager.php",0) != 0)
 			{
 				require_once($file);
-				if(!$this->using_cache || !$file_cache_exists)
+				if(!$this->config->using_cache || !$file_cache_exists)
 				{
 					$class = $this->get_php_classes($file);
 					if(!is_null($class["apiname"])){
@@ -115,12 +130,12 @@ class ApiGenerator
 			}
 		}
 		closedir($dir);
-		if($this->using_cache && !$file_cache_exists)
+		if($this->config->using_cache && !$file_cache_exists)
 		{
 			$this->genFileCache("api","map", "main",$this->apiMap);
 		}
 
-		if($this->using_cache && $file_cache_exists)
+		if($this->config->using_cache && $file_cache_exists)
 		{
 			$this->apiMap = $this->getFileCache("api","map");
 		}
@@ -318,18 +333,18 @@ class ApiGenerator
 					if(!$default){
 						array_splice($elementsUrl,0,1);
 					}
-					if(!$this->using_cache || !$function['cache']['activate'] || !$file_cache_exists || !$function["disable"])
+					if(!$this->config->using_cache || !$function['cache']['activate'] || !$file_cache_exists || !$function["disable"])
 					{
 						$call = new ReflectionMethod( $route["classname"], $function["functionname"] );
 						$return = $call->invokeArgs( new $route["classname"](), $elementsUrl);
 					}
 
-					if($this->using_cache && $function['cache']['activate'] && !$file_cache_exists)
+					if($this->config->using_cache && $function['cache']['activate'] && !$file_cache_exists)
 					{
 						$this->genFileCache($route["classname"], $function["functionname"],$param_cache, $return);
 					}
 
-					if($this->using_cache && $file_cache_exists && $function['cache']['activate'])
+					if($this->config->using_cache && $file_cache_exists && $function['cache']['activate'])
 					{
 						$return  = $this->getFileCache($route["classname"], $function["functionname"],$param_cache);
 					}

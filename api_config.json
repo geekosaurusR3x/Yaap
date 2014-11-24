@@ -1,0 +1,6 @@
+{
+	using_cache: "false",
+	cache_dir: "cache",
+	default_usr_group: "usr",
+	base_of_header: "X_API_"
+}
