@@ -1,13 +1,35 @@
 <?php
+//look to http://php.net/manual/fr/function.getallheaders.php#99814
+if (!function_exists('apache_request_headers'))
+{
+	function apache_request_headers()
+	{
+		$headers = [];
+		foreach ($_SERVER as $name => $value){
+			if (substr($name, 0, 5) == 'HTTP_')
+			{
+				$headers[str_replace(' ', '-', (str_replace('_', ' ', substr($name, 5))))] = $value;
+			}else{
+				$headers[$name]=$value;
+			}
+		}
+		$_SERVER['PATH_INFO'] = 	str_replace($_SERVER['SCRIPT_NAME'],'',$_SERVER['REQUEST_URI']);
+		$_SERVER['PATH_INFO'] = 	str_replace('?'.$_SERVER['QUERY_STRING'],'',$_SERVER['PATH_INFO']);
+		return $headers;
+	}
+}
+
 /**
  * Class managing api
  * This class will read some file and generate a rest api map for beeing used with a restfull api
  */
+
 class ApiGenerator
 {
 	private $apiMap;
 	private $config;
 	private $config_file = "config/api_config.json";
+	private $request;
 
 	/**
 	 * Simple constructor wich only initalise var
@@ -19,6 +41,9 @@ class ApiGenerator
 		$this->config->using_cache = false;
 		$this->config->cache_dir = "cache";
 
+		$this->loadConfig();
+
+		$request = new stdClass();
 	}
 
 	/**
@@ -31,6 +56,16 @@ class ApiGenerator
 		}
 
 	}
+
+	/**
+	 * Load the url request, request method, param and header
+	 */
+	function getRequest(){
+		$this->request->elements = explode("/",$_SERVER['REQUEST_URI']);
+		$this->request->method = $_SERVER['REQUEST_METHOD'];
+		$this->request->data_type = "";
+	}
+
 	/**
 	 * Return the name of the cache file for a class and function
 	 */
