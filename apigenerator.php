@@ -1,10 +1,18 @@
 <?php
+//seting up the auto load for parser
+spl_autoload_register(function ($class) {
+    include 'parser/' . $class . '.php';
+});
+
+
+
 //look to http://php.net/manual/fr/function.getallheaders.php#99814
 if (!function_exists('apache_request_headers'))
 {
 	function apache_request_headers()
 	{
 		$headers = [];
+
 		foreach ($_SERVER as $name => $value){
 			if (substr($name, 0, 5) == 'HTTP_')
 			{
@@ -13,8 +21,7 @@ if (!function_exists('apache_request_headers'))
 				$headers[$name]=$value;
 			}
 		}
-		$_SERVER['PATH_INFO'] = 	str_replace($_SERVER['SCRIPT_NAME'],'',$_SERVER['REQUEST_URI']);
-		$_SERVER['PATH_INFO'] = 	str_replace('?'.$_SERVER['QUERY_STRING'],'',$_SERVER['PATH_INFO']);
+
 		return $headers;
 	}
 }
@@ -28,31 +35,39 @@ class ApiGenerator
 {
 	private $apiMap;
 	private $config;
-	private $config_file = "config/api_config.json";
+	private $config_file;
 	private $request;
+	private $data_paser;
 
 	/**
 	 * Simple constructor wich only initalise var
+	 * @param string $config_file alternate path for the config file
 	 */
-	function __construct($config_file) {
+	function __construct($config_file = "api_config.json" ) {
 		$this->apiMap = [];
 		$this->config_file = $config_file;
-
-		$this->config->using_cache = false;
-		$this->config->cache_dir = "cache";
-
 		$this->loadConfig();
 
-		$request = new stdClass();
+		$this->request = new stdClass();
+
 	}
 
 	/**
 	 * Load the config file if exist
-	 * try into config dir or at the root
+	 * try into config dir or load default config
 	 */
 	private function loadConfig(){
 		if(file_exists($this->config_file)){
-			$this->config = json_decode(file_get_contents($this->config_file),true);
+			$this->config = json_decode(file_get_contents($this->config_file));
+		}
+		else{
+			$this->config = new stdClass();
+			$this->config->using_cache = false;
+			$this->config->cache_dir = "cache";
+			$this->config->default_usr_group = "usr";
+			$this->config->base_of_header = "X_API_";
+			$this->config->base_url = "api/";
+			$this->config->data_type = "application/json";
 		}
 
 	}
@@ -61,9 +76,15 @@ class ApiGenerator
 	 * Load the url request, request method, param and header
 	 */
 	function getRequest(){
-		$this->request->elements = explode("/",$_SERVER['REQUEST_URI']);
-		$this->request->method = $_SERVER['REQUEST_METHOD'];
-		$this->request->data_type = "";
+		$headers = apache_request_headers();
+		$this->request->elements = explode("/",str_replace($this->config->base_url, '', $headers['REQUEST_URI']));
+		$this->request->method = $headers['REQUEST_METHOD'];
+		$this->request->content_type = (strcmp($headers['CONTENT_TYPE'],'') != 0)?$headers['CONTENT_TYPE']:$this->config->data_type;
+
+		$data_type = explode("/",$this->request->content_type)[1];
+		$class = $data_type."Parser";
+		$this->parser_request = new $class();
+
 	}
 
 	/**
@@ -129,14 +150,6 @@ class ApiGenerator
 	}
 
 	/**
-	 * Set cache mode
-	 */
-	public function setCache($bool)
-	{
-		$this->config->using_cache = $bool;
-	}
-
-	/**
 	 * List file and include only one that start by "api" like apimodulelog.php
 	 * Do an eval of the source of this file
 	 * Generate the api map
@@ -150,7 +163,7 @@ class ApiGenerator
 		while($file = readdir($dir))
 		{
 			$class = null;
-			if(substr_compare($file,"api", 0,3) == 0 && substr_compare($file,"apimanager.php",0) != 0)
+			if(substr_compare($file,"api", 0,3) == 0 && substr_compare($file,"apigenerator.php",0) != 0 && substr_compare($file,"api_config.json",0) != 0)
 			{
 				require_once($file);
 				if(!$this->config->using_cache || !$file_cache_exists)
@@ -327,11 +340,9 @@ class ApiGenerator
 
 	/**
 	 * Execute api
-	 * @param string[] $url element
-	 * @param bool $auth authentification status
-	 * @return string[] responce from the api
 	 */
-	public function execute($elementsUrl,$auth=false,$grp="user"){
+	public function execute(){
+		$elementsUrl = $this->request->elements;
 		if(isset($elementsUrl[0]) && array_key_exists($elementsUrl[0],$this->apiMap))
 		{
 			#get the class to execute
@@ -405,6 +416,19 @@ class ApiGenerator
 			$return['error'] = "your request is not into the api<br />see the api array for list";
 		}
 		return $return;
+	}
+
+
+	/**
+	 * Execute the function and output the answerd directly.
+	 * Use it if you haven't thing doing after processing data before send it
+	 */
+	public function executeAndSend(){
+
+		$return = $this->execute();
+
+		header('Content-Type: application/json');
+		echo json_encode($return);
 	}
 
 	/**
