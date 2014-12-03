@@ -15,6 +15,7 @@ class jsonParser extends baseParser {
 	 */
 	public function encode($data){
 
+		return json_encode($data);
 	}
 }
 ?>

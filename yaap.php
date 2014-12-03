@@ -47,9 +47,6 @@ class Yaap
 		$this->apiMap = [];
 		$this->config_file = $config_file;
 		$this->loadConfig();
-
-		$this->request = new stdClass();
-
 	}
 
 	/**
@@ -77,6 +74,9 @@ class Yaap
 	 */
 	function getRequest(){
 		$headers = apache_request_headers();
+
+		$this->request = new stdClass();
+
 		$this->request->elements = explode("/",str_replace($this->config->base_url, '', $headers['REQUEST_URI']));
 		$this->request->method = $headers['REQUEST_METHOD'];
 		$this->request->content_type = (strcmp($headers['CONTENT_TYPE'],'') != 0)?$headers['CONTENT_TYPE']:$this->config->data_type;
@@ -419,15 +419,23 @@ class Yaap
 
 
 	/**
-	 * Execute the function and output the answerd directly.
+	 * Execute the function and output the answer directly.
 	 * Use it if you haven't thing doing after processing data before send it
 	 */
 	public function executeAndSend(){
 
 		$return = $this->execute();
+		$this->send($return);
+	}
 
-		header('Content-Type: application/json');
-		echo json_encode($return);
+	/**
+	 * Output the answer after passing by the parser
+	 * set the content type from the request and after echo the parser encoded datas
+	 * @param Array $data the data to encode
+	 */
+	public function send($data){
+		header($this->request->content_type);
+		echo($this->parser_request->encode($data));
 	}
 
 	/**
