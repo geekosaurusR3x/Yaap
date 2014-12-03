@@ -353,6 +353,8 @@ class Yaap
 			$execute = true;
 			$default = true;
 			$return = [];
+			$return['responce_code']=200;
+
 			$function = (isset($route['function'][$grp]["default"]))?$route['function'][$grp]["default"]:null;
 
 			#find if exist into the api and if true switch with the function
@@ -363,7 +365,8 @@ class Yaap
 			else{
 				foreach($route['function'] as $group){
 					if(isset($elementsUrl[0]) && array_key_exists($elementsUrl[0],$group)){
-						$return['error'] = "You aren't in the right group";
+						$return['responce_code'] = 403;
+						$return['data'] = ['message'=>"You aren't in the right group"];
 						$execute = false;
 					}
 				}
@@ -380,7 +383,7 @@ class Yaap
 					if(!$this->config->using_cache || !$function['cache']['activate'] || !$file_cache_exists || !$function["disable"])
 					{
 						$call = new ReflectionMethod( $route["classname"], $function["functionname"] );
-						$return = $call->invokeArgs( new $route["classname"](), $elementsUrl);
+						$return['data'] = $call->invokeArgs( new $route["classname"](), $elementsUrl);
 					}
 
 					if($this->config->using_cache && $function['cache']['activate'] && !$file_cache_exists)
@@ -390,12 +393,12 @@ class Yaap
 
 					if($this->config->using_cache && $file_cache_exists && $function['cache']['activate'])
 					{
-						$return  = $this->getFileCache($route["classname"], $function["functionname"],$param_cache);
+						$return['data']  = $this->getFileCache($route["classname"], $function["functionname"],$param_cache);
 					}
 
 					foreach($function['cache']['del'] as $delement){
-						if(isset($return['param'])){
-							$this->delFileCache($delement["classname"], $delement["functionname"],$return['param']);
+						if(isset($return['data']['param'])){
+							$this->delFileCache($delement["classname"], $delement["functionname"],$return['data']['param']);
 						}else{
 							$this->delFileCache($delement["classname"], $delement["functionname"]);
 						}
@@ -405,13 +408,14 @@ class Yaap
 				}
 			}
 			else{
-				$return['error'] = "you must be logged to access";
+				$return['responce_code'] = 401;
+				$return['data'] = ['message'=>'you must be logged to access'];
 			}
 		}
-		else #if not present print element and print maping_api
+		else #if not present set 404 error code and un msg
 		{
-			$return =  $this->getHelp();
-			$return['error'] = "your request is not into the api<br />see the api array for list";
+			$return['responce_code'] = 404;
+			$return['data'] = ['message'=>'My answer is 42'];
 		}
 		return $return;
 	}
@@ -433,8 +437,9 @@ class Yaap
 	 * @param Array $data the data to encode
 	 */
 	public function send($data){
+		http_response_code ($data['responce_code'] );
 		header("Content-Type: ".$this->request->content_type);
-		echo($this->parser_request->encode($data));
+		echo($this->parser_request->encode($data['data']));
 	}
 
 	/**
