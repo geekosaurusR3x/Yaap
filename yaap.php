@@ -74,7 +74,6 @@ class Yaap
 	 */
 	function getRequest(){
 		$headers = apache_request_headers();
-
 		$this->request = new stdClass();
 
 		$this->request->elements = explode("/",str_replace($this->config->base_url, '', $headers['REQUEST_URI']));
@@ -434,7 +433,7 @@ class Yaap
 	 * @param Array $data the data to encode
 	 */
 	public function send($data){
-		header($this->request->content_type);
+		header("Content-Type: ".$this->request->content_type);
 		echo($this->parser_request->encode($data));
 	}
 
