@@ -4,5 +4,6 @@
 	"default_usr_group": "usr",
 	"base_of_header": "X_API_",
 	"base_url":"generator/",
-	"data_type": "application/json"
+	"data_type": "application/json",
+	"help": true
 }

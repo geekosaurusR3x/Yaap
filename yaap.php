@@ -65,6 +65,7 @@ class Yaap
 			$this->config->base_of_header = "X_API_";
 			$this->config->base_url = "api/";
 			$this->config->data_type = "application/json";
+			$this->config->help = true;
 		}
 
 	}
