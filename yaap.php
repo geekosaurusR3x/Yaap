@@ -28,10 +28,10 @@ if (!function_exists('apache_request_headers'))
 
 /**
  * Class managing api
- * This class will read some file and generate a rest api map for beeing used with a restfull api
+ * This class will read some file and generate a rest api map for beeing used as a restfull api
  */
 
-class ApiGenerator
+class Yaap
 {
 	private $apiMap;
 	private $config;
@@ -163,7 +163,7 @@ class ApiGenerator
 		while($file = readdir($dir))
 		{
 			$class = null;
-			if(substr_compare($file,"api", 0,3) == 0 && substr_compare($file,"apigenerator.php",0) != 0 && substr_compare($file,"api_config.json",0) != 0)
+			if(substr_compare($file,"api", 0,3) == 0 && substr_compare($file,"yaap.php",0) != 0 && substr_compare($file,"api_config.json",0) != 0)
 			{
 				require_once($file);
 				if(!$this->config->using_cache || !$file_cache_exists)

@@ -8,10 +8,10 @@ $auth = false;
 session_start();
 ##include
 #load include the api class
-require('apigenerator.php');
+require('yaap.php');
 
 #Execute load and execute the api
-$api = new ApiGenerator();
+$api = new Yaap();
 $api->getRequest();
 $api->load();
 $api->executeAndSend();
