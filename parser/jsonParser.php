@@ -1,7 +1,7 @@
 <?php
 require_once('baseParser.php');
 
-class jsonPaser extends baseParser {
+class jsonParser extends baseParser {
 
 	/**
 	 * this one decode the data from the body of the request

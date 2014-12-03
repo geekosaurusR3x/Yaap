@@ -84,7 +84,6 @@ class Yaap
 		$data_type = explode("/",$this->request->content_type)[1];
 		$class = $data_type."Parser";
 		$this->parser_request = new $class();
-
 	}
 
 	/**
