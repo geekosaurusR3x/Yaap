@@ -4,7 +4,9 @@ require_once('baseParser.php');
 class jsonParser extends baseParser {
 
 	/**
-	 * this one decode the data from the body of the request
+	 * this one decode the data form json string
+	 * @param String $data the data to decode
+	 * @return Array
 	 */
 	public function decode($data){
 		$return = json_decode($data, TRUE );
@@ -15,7 +17,9 @@ class jsonParser extends baseParser {
 	}
 
 	/**
-	 * this one encode for responding
+	 * this one encode for responding into json
+	 * @param Array $data the data to encode
+	 * @return String
 	 */
 	public function encode($data){
 
