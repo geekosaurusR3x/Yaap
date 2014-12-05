@@ -354,7 +354,6 @@ class Yaap
 			$execute = true;
 			$default = true;
 			$return = [];
-			$return['responce_code']=200;
 
 			$function = (isset($route['function'][$grp]["default"]))?$route['function'][$grp]["default"]:null;
 
@@ -367,7 +366,7 @@ class Yaap
 				foreach($route['function'] as $group){
 					if(isset($elementsUrl[0]) && array_key_exists($elementsUrl[0],$group)){
 						$return['responce_code'] = 403;
-						$return['data'] = ['message'=>"You aren't in the right group"];
+						$return['message'] = "You aren't in the right group";
 						$execute = false;
 					}
 				}
@@ -384,7 +383,7 @@ class Yaap
 					if(!$this->config->using_cache || !$function['cache']['activate'] || !$file_cache_exists || !$function["disable"])
 					{
 						$call = new ReflectionMethod( $route["classname"], $function["functionname"] );
-						$return['data'] = $call->invokeArgs( new $route["classname"](), $elementsUrl);
+						$return = $call->invokeArgs( new $route["classname"](), $elementsUrl);
 					}
 
 					if($this->config->using_cache && $function['cache']['activate'] && !$file_cache_exists)
@@ -394,11 +393,11 @@ class Yaap
 
 					if($this->config->using_cache && $file_cache_exists && $function['cache']['activate'])
 					{
-						$return['data']  = $this->getFileCache($route["classname"], $function["functionname"],$param_cache);
+						$return  = $this->getFileCache($route["classname"], $function["functionname"],$param_cache);
 					}
 
 					foreach($function['cache']['del'] as $delement){
-						if(isset($return['data']['param'])){
+						if(isset($return['param'])){
 							$this->delFileCache($delement["classname"], $delement["functionname"],$return['data']['param']);
 						}else{
 							$this->delFileCache($delement["classname"], $delement["functionname"]);
@@ -410,13 +409,13 @@ class Yaap
 			}
 			else{
 				$return['responce_code'] = 401;
-				$return['data'] = ['message'=>'you must be logged to access'];
+				$return['message'] = "You shall not pass";
 			}
 		}
 		else #if not present set 404 error code and un msg
 		{
 			$return['responce_code'] = 404;
-			$return['data'] = ['message'=>'My answer is 42'];
+			$return['message'] = 'My answer is 42';
 		}
 		return $return;
 	}
@@ -438,9 +437,13 @@ class Yaap
 	 * @param Array $data the data to encode
 	 */
 	public function send($data){
-		http_response_code ($data['responce_code'] );
+		if(isset($data['responce_code'])){
+			http_response_code ($data['responce_code']);
+			unset($data['responce_code']);
+		}
+
 		header("Content-Type: ".$this->request->content_type);
-		echo($this->parser_request->encode($data['data']));
+		echo($this->parser_request->encode($data));
 	}
 
 	/**
