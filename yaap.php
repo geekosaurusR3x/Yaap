@@ -81,9 +81,21 @@ class Yaap
 		$this->request->method = $headers['REQUEST_METHOD'];
 		$this->request->content_type = (strcmp($headers['CONTENT_TYPE'],'') != 0)?$headers['CONTENT_TYPE']:$this->config->data_type;
 
-		$data_type = explode("/",$this->request->content_type)[1];
+		$data_type = explode(";",$this->request->content_type)[0];
+		$data_type = explode("/",$data_type)[1];
+
 		$class = $data_type."Parser";
 		$this->parser_request = new $class();
+
+		$data = file_get_contents('php://input');
+		$this->request->post = $_POST;
+		try {
+			$this->request->data = $this->parser_request->decode($data);
+		}catch (Exception $e){
+			$this->send(['responce_code'=>400,
+					   'message'=>$e->getMessage()]);
+		}
+
 	}
 
 	/**
@@ -110,6 +122,7 @@ class Yaap
 	 * @param Array $data the data to encode
 	 */
 	public function send($data){
+
 		if(isset($data['responce_code'])){
 			http_response_code ($data['responce_code']);
 			unset($data['responce_code']);
@@ -117,6 +130,7 @@ class Yaap
 
 		header("Content-Type: ".$this->request->content_type);
 		echo($this->parser_request->encode($data));
+		die();
 	}
 }
 ?>
