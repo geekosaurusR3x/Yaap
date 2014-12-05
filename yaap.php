@@ -111,7 +111,6 @@ class Yaap
 	 * Use it if you haven't thing doing after processing data before send it
 	 */
 	public function executeAndSend(){
-
 		$return = $this->execute();
 		$this->send($return);
 	}
@@ -122,8 +121,7 @@ class Yaap
 	 * @param Array $data the data to encode
 	 */
 	public function send($data){
-
-		if(isset($data['responce_code'])){
+		if(!is_object($data) && isset($data['responce_code'])){
 			http_response_code ($data['responce_code']);
 			unset($data['responce_code']);
 		}

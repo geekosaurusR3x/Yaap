@@ -1,10 +1,10 @@
 <?php
 require_once('baseParser.php');
 /**
- * Extend baseParserClass
- * The parser is for json data type
+ * Extend jsonParser Class
+ * The parser is for jsonp data type
  */
-class jsonParser extends baseParser {
+class javascriptParser extends jsonParser {
 
 	/**
 	 * this one decode the data form json string
@@ -12,11 +12,7 @@ class jsonParser extends baseParser {
 	 * @return Array
 	 */
 	public function decode($data){
-		$return = json_decode($data, TRUE );
-		if($return == null){
-			throw new Exception('Json data mal formated');
-		}
-		return $return;
+		return parent::decode($data);
 	}
 
 	/**
@@ -25,8 +21,7 @@ class jsonParser extends baseParser {
 	 * @return String
 	 */
 	public function encode($data){
-
-		return json_encode($data);
+		return $_GET['callback']."(".parent::encode($data).")";
 	}
 }
 ?>
