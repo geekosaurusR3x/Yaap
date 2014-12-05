@@ -13,7 +13,7 @@ require('yaap.php');
 #Execute load and execute the api
 $api = new Yaap();
 $api->getRequest();
-$api->load();
+//$api->load();
 $api->executeAndSend();
 
 ?>
