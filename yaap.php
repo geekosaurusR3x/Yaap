@@ -89,6 +89,7 @@ class Yaap
 
 		$data = file_get_contents('php://input');
 		$this->request->post = $_POST;
+		if($this->request->method == "POST" || $this->request->method == "PUT")
 		try {
 			$this->request->data = $this->parser_request->decode($data);
 		}catch (Exception $e){
